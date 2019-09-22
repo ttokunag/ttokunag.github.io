@@ -21,10 +21,6 @@ let destIsDragged = false;
 let startArrowImg;
 let resetButton;
 let resetAllButton;
-
-function preload() {
-    startArrowImg = loadImage('arrow.png');
-}
   
 function setup() {
     createCanvas(windowWidth, windowHeight / 1.3);
