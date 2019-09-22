@@ -18,7 +18,6 @@ let current;
 let startButton;
 let startIsDragged = false;
 let destIsDragged = false;
-let startArrowImg;
 let resetButton;
 let resetAllButton;
   
