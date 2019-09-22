@@ -4,7 +4,7 @@
 <head>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.js"></script>
-  <link rel="stylesheet" type="text/css" href="styles.css">
+  <link rel="stylesheet" type="text/css" href="styles-images/styles.css">
   <meta charset="utf-8" />
 
 </head>
@@ -12,6 +12,34 @@
 <body>
   <script src="sketch.js"></script>
   <script src="spot.js"></script>
+
+  <div id="pointModal" class="modal">
+      <div id="introModal" class="modal-content">
+        <span id="point-close" class="close">&times;</span>
+        <h1 style="font-size: 24px">Moving points</h1><br>
+        <p>
+          You can move the start and end points by dragging them. 
+          The poitnts cannot be moved after alogrithms begin.
+        </p><br><br>
+        <img src="styles-images/movingPoints.gif""><br>
+      </div>
+    </div>
+  <div id="wallModal" class="modal" style="background-color: rgba(0,0,0,0);">
+    <div id = "introModal" class="modal-content">
+      <span id="wall-close" class="close">&times;</span>
+      <h1 style="font-size: 24px">Creating walls</h1><br>
+      <p>
+        You can create walls by dragging empty blocks. 
+        Be careful that you cannot create a wall on the start and end points.
+      </p><br><br>
+      <img src="styles-images/create-wall.gif""><br>
+    </div>
+  </div>
+
+  <div id="navbar">
+    <h1>PathFinding Visualizer</h1>
+  </div>
+  <div id="canvas"></div>
 </body>
 
 </html>

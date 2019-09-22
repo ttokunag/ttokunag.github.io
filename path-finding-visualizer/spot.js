@@ -30,7 +30,7 @@ class Spot {
     * @param col: a color object for paint this spot
     */
     show(col) {
-        stroke(0, 0, 250, 40);
+        stroke(0, 0, 0, 55);
         if (col) { // spots being processed
             fill(col);
         } else if (this.wall) { // wall
