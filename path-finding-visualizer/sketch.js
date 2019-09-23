@@ -19,14 +19,22 @@ let current;
 let startButton;
 let startIsDragged = false;
 let destIsDragged = false;
+let creatingWalls = false;
 let resetButton;
 let resetAllButton;
 let wallCloseSpan;
 let pointCloseSpan;
 let wallModalClosed = false;
 let pointModalClosed = false;
+let isSmartPhone = false;
 
 function setup() {
+    if (navigator.userAgent.match(/Android/i) || navigator.userAgent.match(/webOS/i)
+    || navigator.userAgent.match(/iPhone/i) || navigator.userAgent.match(/iPad/i) 
+    || navigator.userAgent.match(/iPod/i) || navigator.userAgent.match(/BlackBerry/i)
+    || navigator.userAgent.match(/Windows Phone/i)) {
+        isSmartPhone = true;
+    } 
     canvas = createCanvas(windowWidth, windowHeight / 1.3);
     canvas.parent('#canvas');
   
@@ -66,6 +74,24 @@ function setup() {
     openSet.push(start);
 
     objectInit();
+
+    /* initial states drawing */
+    background(255);
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            grid[i][j].show();
+        }
+    }    
+    stroke(0); strokeWeight(2); fill(0, 0, 0, 50);
+    triangle(
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + 5*boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/1.2, (startPos[1] * boxSize) + paddingV + boxSize/2,
+    );
+    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/1.3);
+    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/3);
+    strokeWeight(1); // revert stroke weight
+    noLoop();
 }
   
 function draw() {
@@ -85,7 +111,7 @@ function draw() {
             if (current === end) {
                 started = false; // stops the algorithm
                 ended = true;
-                console.log("DONE!");
+                noLoop();
             }
 
             // Best option moves from openSet to closedSet
@@ -159,11 +185,6 @@ function draw() {
         if (openSet.length != 1)
             openSet[i].show(color('#D2A3CB'));
     }
-  
-  
-    // for (let i = 0; i < path.length; i++) {
-    //     path[i].show(color('#FFEF6C'));
-    // }
 
     if (!noSolution) {
         noFill();
@@ -175,10 +196,13 @@ function draw() {
         }
         endShape();
         strokeWeight(1);
+    } else {
+        // stop the loop when no solution
+        noLoop();
     }
 
     /* draws the start and destination icons */
-    stroke(0); strokeWeight(2); fill(0, alpha=50);
+    stroke(0); strokeWeight(2); fill(0, 0, 0, 50);
     triangle(
         (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + boxSize/6,
         (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + 5*boxSize/6,
@@ -209,7 +233,14 @@ function objectInit() {
     wallCloseSpan = select('#wall-close');
     wallCloseSpan.mousePressed(wallClosePressed);
     pointCloseSpan = select('#point-close');
-    pointCloseSpan.mousePressed(pointClosePressed)
+    pointCloseSpan.mousePressed(pointClosePressed);
+
+    if (isSmartPhone) {
+        for (let modal of selectAll('.modal-content')) {
+            modal.removeClass('modal-content');
+            modal.class('modal-content-smapho');
+        }
+    }
 
     startButton = createButton('Start');
     startButton.mousePressed(startAlgo);
@@ -227,23 +258,26 @@ function objectInit() {
     resetAllButton.parent('#navbar');
 }
 function wallClosePressed() {
-    select('#wallModal').style('display', 'none');
+    select('#wall-modal').style('display', 'none');
     wallModalClosed = true;
 }
 function pointClosePressed() {
-    select('#pointModal').style('display', 'none');
+    select('#point-modal').style('display', 'none');
     pointModalClosed = true;
 }
 function startAlgo() {
     started = true;
+    loop();
 }
 function reset() {
     openSet = [start];
     closedSet = [];
-    started = false;
     path = [];
-    started = false; ended = false; 
+    started = false; 
+    ended = false; 
     noSolution = false;
+    // draw a new grid keeping objects
+    drawNewGrid();
 }
 function resetAll() {
     openSet = [start];
@@ -252,58 +286,116 @@ function resetAll() {
     path = [];
     started = false; ended = false; 
     noSolution = false;
+    // reset walls
     for (let i = 0; i < rows; i++) {
         for (let j = 0; j < cols; j++) {
             grid[i][j].wall = false;
         }
     }
+    // draw a new grid
+    drawNewGrid();
+}
+function drawNewGrid() {
+    /* drawing a new grid */
+    background(255);
+    for (let i = 0; i < rows; i++) {
+        for (let j = 0; j < cols; j++) {
+            grid[i][j].show();
+        }
+    }
+    stroke(0); strokeWeight(2); fill(0, 0, 0, 50);
+    // starting spot
+    triangle(
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/4.5, (startPos[1] * boxSize) + paddingV + 5*boxSize/6,
+        (startPos[0] * boxSize) + paddingH + boxSize/1.2, (startPos[1] * boxSize) + paddingV + boxSize/2,
+    );
+    // destination spot
+    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/1.3);
+    ellipse((endPos[0] * boxSize) + paddingH + boxSize/2, (endPos[1] * boxSize) + paddingV + boxSize/2, boxSize/3);
+    strokeWeight(1);
 }
 function mousePressed() {
-    if (!wallModalClosed)
+    /* diables building walls when modals are opened
+        or algorithms started */
+    if (!(wallModalClosed && pointModalClosed) || started || ended) {
         return;
-    if (started || ended)
-        return;
+    }
         
     let xPressed = floor((mouseX-paddingH) / boxSize);
     let yPressed = floor((mouseY-paddingV) / boxSize);
+    /* avoid the case of out-of-bounds */
     if (!((xPressed >= 0 && xPressed < grid.length) && (yPressed >= 0 && yPressed < grid[0].length))) {
         return;
     }
+    /* when empty blocks are pressed */
     if (!((xPressed == startPos[0] && yPressed == startPos[1]) 
             || (xPressed == endPos[0] && yPressed == endPos[1]))) {
         grid[xPressed][yPressed].wall = !grid[xPressed][yPressed].wall;
+        // drawing a block
+        stroke(0, 0, 0, 55);
+        if (grid[xPressed][yPressed].wall) {
+            fill(71);
+        } else {
+            fill(255);
+        }
+        rect((xPressed * boxSize) + paddingH, (yPressed * boxSize) + paddingV, boxSize, boxSize);
     }
 }
 function mouseDragged() {
-    if (!wallModalClosed)
+    /* diables building walls when modals are opened
+        or algorithms started */
+    if (!(wallModalClosed && pointModalClosed) || started || ended) {
         return;
-    if (started || ended)
-        return;
+    }
 
     let xPressed = floor((mouseX-paddingH) / boxSize);
     let yPressed = floor((mouseY-paddingV) / boxSize);
-    if (xPressed == startPos[0] && yPressed == startPos[1]) {
-        startIsDragged = true;
-    } else if (xPressed == endPos[0] && yPressed == endPos[1]) {
-        destIsDragged = true;
+
+    /* 3 options: empty, start and destination */
+    if (!(startIsDragged || destIsDragged || creatingWalls)) {
+        if (xPressed == startPos[0] && yPressed == startPos[1]) {
+            startIsDragged = true;
+        } else if (xPressed == endPos[0] && yPressed == endPos[1]) {
+            destIsDragged = true;
+        } else {
+            creatingWalls = true;
+        }
     }
 
+    /* avoid the out-of-bounds error */
     if (!((xPressed >= 0 && xPressed < grid.length) && (yPressed >= 0 && yPressed < grid[0].length))) {
         return;
     }
 
-    if (startIsDragged) {
-        startPos = [xPressed, yPressed]
-        start = grid[xPressed][yPressed];
-        openSet = [start];
-    } else if (destIsDragged) {
-        endPos = [xPressed, yPressed]
-        end = grid[xPressed][yPressed];
-    } else {
-        grid[xPressed][yPressed].wall = true;
+    /* the case either the start or the destination is dragged */
+    if ((startIsDragged || destIsDragged) && !grid[xPressed][yPressed].wall) {
+        if (startIsDragged) {
+            startPos = [xPressed, yPressed];
+            start = grid[xPressed][yPressed];
+            openSet = [start];
+        } else {
+            endPos = [xPressed, yPressed]
+            end = grid[xPressed][yPressed];
+        }
+
+        drawNewGrid();
+    } 
+    else { // creating walls
+        // avoid crating walls on the start & destination spots
+        if (!((xPressed == startPos[0] && yPressed == startPos[1])
+            || (xPressed == endPos[0] && yPressed == endPos[1])))
+        {
+            grid[xPressed][yPressed].wall = true;
+            stroke(0, 0, 0, 55);
+            fill(71);
+            rect((xPressed * boxSize) + paddingH, (yPressed * boxSize) + paddingV, boxSize, boxSize);
+        }
     }
 }
 function mouseReleased() {
+    // reset the dragging status
     startIsDragged = false;
     destIsDragged = false;
+    creatingWalls = false;
 }
