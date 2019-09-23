@@ -16,6 +16,11 @@ img {
     margin-left: auto;
     margin-right: auto;
 }
+html, body {
+    margin: 0; 
+    height: 100%; 
+    overflow: hidden;
+}
 
 /* class styles are below */
 .selected-button {
