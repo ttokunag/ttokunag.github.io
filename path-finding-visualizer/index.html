@@ -5,25 +5,31 @@
   <title>Pathfinding Visualizer</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/p5.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.dom.js"></script>
-  <link rel="stylesheet" type="text/css" href="styles-images/styles.css">
+  <script src="src/algorithms/a-star.js"></script>
+  <link rel="stylesheet" type="text/css" href="src/styles-images/styles.css">
   <meta charset="utf-8" />
 
 </head>
 
 <body>
-  <script src="sketch.js"></script>
-  <script src="spot.js"></script>
+  <script src="src/sketch.js"></script>
+  <script src="src/spot.js"></script>
+
+  <div id="navbar">
+    <h1>PathFinding Visualizer</h1>
+  </div>
+  <div id="canvas"></div>
 
   <div id="point-modal" class="modal"> <!--dim background cover all screen-->
-      <div id="point-modal-content" class="modal-content"> <!--contents (white modal)-->
-        <span id="point-close" class="close">&times;</span>
-        <h1 style="font-size: 24pt; ">Moving points</h1><br>
-        <p style="font-size: 14pt">
-          You can move the start and end points by dragging them. 
-          The poitnts cannot be moved after alogrithms begin.
-        </p><br><br>
-        <img src="styles-images/movingPoints.gif">
-      </div>
+    <div id="point-modal-content" class="modal-content"> <!--contents (white modal)-->
+      <span id="point-close" class="close">&times;</span>
+      <h1 style="font-size: 24pt; ">Moving points</h1><br>
+      <p style="font-size: 14pt">
+        You can move the start and end points by dragging them. 
+        The poitnts cannot be moved after alogrithms begin.
+      </p><br><br>
+      <img src="src/styles-images/movingPoints.gif">
+    </div>
   </div>
   <div id="wall-modal" class="modal" style="background-color: rgba(0,0,0,0);">
     <div id="wall-modal-content" class="modal-content">
@@ -33,14 +39,9 @@
         You can create walls by CLICKING a brock or DRAGGING empty blocks. 
         Be careful that you cannot create a wall on the start and end points.
       </p><br><br>
-      <img src="styles-images/create-wall.gif">
+      <img src="src/styles-images/create-wall.gif">
     </div>
   </div>
-
-  <div id="navbar">
-    <h1>PathFinding Visualizer</h1>
-  </div>
-  <div id="canvas"></div>
 </body>
 
 </html>
