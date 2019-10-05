@@ -4,7 +4,7 @@
 */
 class Pipe {
   constructor() {
-    this.spacing = 130;
+    this.spacing = 175;
     // the y-coordinate of the upper pipe BOTTOM
     this.top = random(height / 6, 3 / 4 * height);
     // the y-coordinate of the lower pipe TOP

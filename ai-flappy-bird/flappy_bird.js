@@ -7,13 +7,15 @@
 const TOTAL = 500; // the number of samples
 let w = 45; let h = Math.floor(w * 0.7036);
 let playerBird;
+let loadedBird;
 let birds = [];
 let savedBirds = []; // arrays to store hit bird neurons
 let pipes = [];
 let closest;
 let nnCanvas;
 let playMode = false;
-let playerPaused = true;
+let loadedBirdMode = false;
+let playerPaused = true; //pre-playing OR game-over
 let gameIsOver = false;
 let loopPaused = true;
 let analysisMode = true;
@@ -29,6 +31,8 @@ let aboutButton;
 let playModeButton;
 let aiModeButton;
 let pauseButton;
+let saveButton;
+let loadButton;
 let analysisButton;
 let counter = 0; // counts drawing phase
 let currentGameScore = 0;
@@ -41,12 +45,15 @@ let slider;
 * the larger the faster drawn movement looks
 */
 let isSmartPhone = false;
+let url = "https://vast-lake-55314.herokuapp.com/api/people";
+let brainJSON;
 
 function preload() {
   birdImg = loadImage('images/flappy_bird.png');
   bgImg = loadImage('images/red_sky_bg.jpg');
   pipeImg = loadImage('images/pipe.png');
   pipeTopImg = loadImage('images/pipes_top.png');
+  // brainJSON = loadJSON('bird.json');
 }
 
 function setup() {
@@ -68,6 +75,133 @@ function setup() {
     birds[i] = new Bird();
   }
   objectInit();
+}
+
+function draw() {
+  /* background image of the game canvas */
+  image(bgImg, 0, 0, width, height);
+
+  /* When the AI mode is ON */
+  if (!playMode) {
+    if (!loopPaused) {
+      // this for-loop speeds up the drawing 
+      // (it doesn't affect the NN-learning process)
+      for (let t = 0; t < slider.value(); t++) {
+        // calculate frame rates
+        counterUtil();
+    
+        // update pipes
+        for (let i = pipes.length - 1; i >= 0; i--) {
+          pipes[i].update();
+    
+          if (!loadedBirdMode) {
+            // check if each bird hits pipes. if so delete it
+            for (let j = birds.length - 1; j >= 0; j--) {
+              if (pipes[i].hits(birds[j])) {
+                savedBirds.push(birds.splice(j, 1)[0]);
+              }
+            }
+          } else { // when having a loaded bird play
+            //TODO: define loadedBird
+            if (pipes[i].hits(loadedBird)) {
+              //TODO: stop the AI playing
+              console.log('hits a pipe');
+              noLoop();
+            }
+          }
+          
+          // if pipes are off the screen, delete it.
+          if (pipes[i].offscreen()) {
+            pipes.splice(i, 1);
+          }
+        }
+    
+        if (!loadedBirdMode) {
+          // checks if birds are off the screen
+          for (let i = birds.length - 1; i >= 0; i--) {
+            if (birds[i].offScreen()) {
+              savedBirds.push(birds.splice(i, 1)[0]);
+            }
+          }
+        } else {
+          if (loadedBird.offScreen()) {
+            noLoop();
+          }
+        }
+        
+    
+        if (!loadedBirdMode) {
+          // lets birds neurons think of the next movement
+          for (let bird of birds) {
+            bird.think(pipes);
+            bird.update();
+            currentNeuron = bird.score;
+          }
+          regenerateBirds();
+        } else {
+          loadedBird.think(pipes);
+          loadedBird.update();
+          currentNeuron = loadedBird.score;
+        }
+      }
+
+      /* draw triangles (KEEP THIS POSITION)*/
+      analysisTriangles();
+    } 
+    // at the very beginning of the AI mode
+    else if (counter == 0) {
+      stroke(0); strokeWeight(3);
+      textSize(24); textAlign(CENTER);
+      text('Press "Start AI"', width / 2.05, height/7 + 50);
+    }
+    /* shows the birds */
+    if (!loadedBirdMode) {
+      for (let bird of birds) {
+        bird.show();
+      }
+    } else {
+      loadedBird.show();
+    }
+  }
+
+  /* Player Mode below */
+  else if (playMode) {
+    if (playerPaused) {
+      if (!gameIsOver) {
+        stroke(0); strokeWeight(3);
+        textSize(20); textAlign(CENTER);
+        text('SPACE or TAP to fly', width / 2.05, height/7 + 50);
+      } 
+    } else {
+      // calculate frame rates
+      counterUtil();
+      
+      playerBird.update();
+
+      /* when the game is over for getting off-screen */
+      if (playerBird.offScreen()) {
+        gameIsOver = true;
+        playerPaused = true;
+      }
+
+      // pipes updates
+      for (let i = pipes.length-1; i >= 0; i--) {
+        pipes[i].update();
+        /* when the game is over for hitting */
+        if (pipes[i].hits(playerBird)) {
+          gameIsOver = true;
+          playerPaused = true;
+        }
+
+        if (pipes[i].offscreen()) {
+          pipes.splice(i, 1);
+        }
+      }
+    }
+    playerBird.show();
+  }
+
+  drawOnCanvas();
 }
 
 function objectInit() {
@@ -108,162 +242,20 @@ function objectInit() {
   pauseButton.parent('control-buttons');
   pauseButton.class('button');
 
-  analysisButton = createButton('Turn Off Analysis');
+  saveButton = createButton('Save Bird');
+  saveButton.mousePressed(saveBird);
+  saveButton.parent('control-buttons');
+  saveButton.class('button');
+
+  loadButton = createButton('Load Bird');
+  loadButton.mousePressed(loadBird);
+  loadButton.parent('control-buttons');
+  loadButton.class('button');
+
+  analysisButton = createButton('Analysis Off');
   analysisButton.mousePressed(analyze);
   analysisButton.parent('control-buttons');
   analysisButton.class('button');
-}
-
-function draw() {
-  /* background image of the game canvas */
-  image(bgImg, 0, 0, width, height);
-
-
-  /* When the AI mode is ON */
-  if (!playMode) {
-    if (!loopPaused) {
-      // this for-loop speeds up the drawing 
-      // (it doesn't affect the NN-learning process)
-      for (let t = 0; t < slider.value(); t++) {
-        if (counter % 75 == 0) { // every 75 drawings add a new pipe
-          pipes.push(new Pipe());
-          if (closest == null) {
-            closest = pipes[0];
-          }
-        }
-        counter++;
-        currentGameScore = floor(counter / 75);
-    
-        for (let i = pipes.length - 1; i >= 0; i--) {
-          pipes[i].update();
-    
-          // check if each bird hits pipes. if so delete it
-          for (let j = birds.length - 1; j >= 0; j--) {
-            if (pipes[i].hits(birds[j])) {
-              savedBirds.push(birds.splice(j, 1)[0]);
-            }
-          }
-          // if pipes are off the screen, delete it.
-          if (pipes[i].offscreen()) {
-            pipes.splice(i, 1);
-          }
-        }
-    
-        // checks if birds are off the screen
-        for (let i = birds.length - 1; i >= 0; i--) {
-          if (birds[i].offScreen()) {
-            savedBirds.push(birds.splice(i, 1)[0]);
-          }
-        }
-    
-        // lets birds neurons think of the next movement
-        for (let bird of birds) {
-          bird.think(pipes);
-          bird.update();
-          currentNeuron = bird.score;
-        }
-        // if all birds hit pipes, starts the next learning phase
-        if (birds.length === 0) {
-          counter = 0;
-          currentGameScore = 0;
-          nextGeneration();
-          pipes = [];
-        }
-      }
-
-      /* draw triangles (KEEP THIS POSITION)*/
-      for (let i = 0; i < birds.length; i++) {
-        // birds[i].show();
-        if (analysisMode) {
-          if (birds[i].x < closest.x) {
-            if (birds[i].velocity < 0) {
-              stroke(255, 0, 0, 50); fill(255, 0, 0, 50);
-            } else {
-              stroke(0, 0, 255, 50); fill(0, 0, 255, 50);
-            }
-            triangle(
-              birds[i].x, birds[i].y, 
-              closest.x + closest.w/2, closest.top, 
-              closest.x + closest.w/2, height - closest.bottom);
-          }
-        }
-      }
-    } else if (counter == 0){
-      stroke(0); strokeWeight(3);
-      textSize(24); textAlign(CENTER);
-      text('Press "Start AI"', width / 2.05, height/7 + 50);
-    }
-    /* shows the birds */
-    for (let bird of birds) {
-      bird.show();
-    }
-  }
-  else if (playMode) {
-    if (playerPaused) {
-      if (!gameIsOver) {
-        stroke(0); strokeWeight(3);
-        textSize(20); textAlign(CENTER);
-        text('SPACE or TAP to fly', width / 2.05, height/7 + 50);
-        // textSize(15); noStroke();
-        // text('Hit SPACE to fly', width / 2.05, height/7 + 30);
-      } 
-    } else {
-      if (counter % 75 == 0) {
-        pipes.push(new Pipe());
-      }
-      counter++;
-      currentGameScore = floor(counter / 75);
-      
-      playerBird.update();
-      // playerBird.show();
-
-      /* when the game is over for getting off-screen */
-      if (playerBird.offScreen()) {
-        gameIsOver = true;
-        playerPaused = true;
-      }
-
-      // pipes updates
-      for (let i = pipes.length-1; i >= 0; i--) {
-        pipes[i].update();
-        /* when the game is over for hitting */
-        if (pipes[i].hits(playerBird)) {
-          gameIsOver = true;
-          playerPaused = true;
-        }
-
-        if (pipes[i].offscreen()) {
-          pipes.splice(i, 1);
-        }
-      }
-    }
-    playerBird.show();
-  }
-
-  /* shows the pipes */
-  for (let pipe of pipes) {
-    pipe.show();
-  }
-
-  /* shows the game mode */
-  fill(255); noStroke();
-  textSize(15); textAlign(LEFT); textStyle(BOLD);
-  text(playMode ? 'Player Mode' : 'AI Mode', width/35, height/18);
-
-  /* displays game scores */
-  stroke(0); strokeWeight(4);
-  textSize(28); textAlign(CENTER);
-  text(currentGameScore, width / 2.05, height / 7);
-
-  /* game over "front" ground */
-  if (gameIsOver) {
-    playerBird.update();
-    background(60, alpha=150);
-    textSize(32); strokeWeight(1);
-    text('GAME OVER', width/2, height/2);
-    textSize(15); textStyle(NORMAL);
-    text('Hit ENTER to restart', width/2, height/2 + 30);
-  }
 }
 
 function keyPressed() {
@@ -277,6 +269,24 @@ function keyPressed() {
     }
     playerBird.up();
   }
+  // else if (key === 'S') {
+  //   let bestBird = birds[0];
+  //   saveJSON(bestBird.brain, 'bird.json');
+  //   console.log(bestBird.brain);
+
+  //   // let bestBrain = birds[0];
+  //   // const options = {
+  //   //   method: "POST",
+  //   //   headers: {
+  //   //     "Content-Type": "application/json"
+  //   //   },
+  //   //   body: bestBrain.brain.serialize()
+  //   // };
+
+  //   // fetch(`${url}/post/brain`, options)
+  //   //   .then(response => console.log(response))
+  //   //   .catch(err => console.error(err));
+  // }
 }
 
 function canvasPressed() {
@@ -367,9 +377,38 @@ function toggleLoop() {
 function analyze() {
   if (analysisMode) {
     analysisMode = false;
-    analysisButton.html('Turn On Analysis');
+    analysisButton.html('Analysis On');
   } else {
     analysisMode = true;
-    analysisButton.html('Turn Off Analysis');
+    analysisButton.html('Analysis Off');
   }
+}
+
+function saveBird() {
+  let birdBrain = birds[0];
+    const options = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: birdBrain.brain.serialize()
+    };
+
+    fetch(`${url}/post/brain`, options)
+      .then(response => console.log(response))
+      .catch(err => console.error(err));
+}
+
+function loadBird() {
+  fetch(`${url}/get/brain`, { method: "GET" })
+    .then(response => { 
+      return response.json();
+    })
+    .then(brainJSON => {
+      console.log(brainJSON[0]);
+      let birdBrain = NeuralNetwork.deserialize(brainJSON[0]);
+      loadedBird = new Bird(birdBrain);
+      loadedBirdMode = true;
+    })
+    .catch(err => console.error(err));
 }
