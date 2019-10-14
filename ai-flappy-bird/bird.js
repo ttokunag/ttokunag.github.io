@@ -5,8 +5,8 @@
 class Bird {
   constructor(brain) {
     // position of a bird
-    this.y = height/2;
-    this.x = width/4;
+    this.y = height / 2;
+    this.x = width / 4;
 
     // up & down speed of a bird
     this.gravity = 0.8;
@@ -27,12 +27,6 @@ class Bird {
 
   /* the appearance of a bird */
   show() {
-    // stroke(255, 0, 0);
-    // line(this.x - w/2, this.y - h/2, this.x + w/2, this.y - h/2);
-    // line(this.x - w/2, this.y + h/2, this.x + w/2, this.y + h/2);
-    // line(this.x - w/2, this.y - h/2, this.x - w/2, this.y + h/2);
-    // line(this.x + w/2, this.y - h/2, this.x + w/2, this.y + h/2);
-    // stroke(0);
     image(birdImg, this.x - w/2, this.y - h/2, w, h);
   }
 
@@ -52,7 +46,6 @@ class Bird {
    */
   think(pipes) {
     // Find the closest pipe
-    // closest = null;
     let closestD = Infinity;
     for (let i = 0; i < pipes.length; i++) {
       // distance of a bird and the CENTER of a pipe

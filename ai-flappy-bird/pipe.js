@@ -33,10 +33,6 @@ class Pipe {
     return false;
   }
 
-  passes(bird) {
-    return (bird.x > this.x);
-  }
-
   /* appears a pipe object */
   show() {
     let pipeW = this.w + 5;
